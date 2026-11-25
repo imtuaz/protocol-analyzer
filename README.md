@@ -104,6 +104,29 @@ cannot detect a flipped data bit. With truncation faults disabled, CAN's silent 
 **0 %** (CRC catches every corruption); its remaining silent cases are captures cut
 before a frame starts, which no decoder can know about.
 
+## Real capture: two-node CAN bus
+
+Captured with a USB logic analyzer (8 MHz) on the RX line of an STM32 node in
+[can-gesture-network](https://github.com/imtuaz/can-gesture-network) (ESP32 + STM32, 500 kbit/s).
+The PulseView `.sr` files were converted with that repo's `tools/sr2csv.py`.
+
+```bash
+./build/pa analyze examples/can_tilt_0x110_0x200.csv can --bitrate 500000 --report r.html
+```
+```
+  48.969 ms    CAN   FRAME   ID 110   -   ID 0x110 DLC 4 | data 55 01 9E FF
+  ...
+  2.0490 s     CAN   FRAME   ID 110   -   ID 0x110 DLC 4 | data BC F9 AB F9
+  2.0492 s     CAN   FRAME   ID 200   -   ID 0x200 DLC 1 | data 00
+  29 events, 0 with errors
+```
+2.5 s of traffic: 25 periodic tilt frames (0x110, every 100 ms) and 4 replies from the STM32 (0x200),
+all with a valid CRC-15. The IDs, data and CRC match PulseView's own CAN decoder on the same capture.
+
+`examples/can_0x123_esp32.csv` is a single frame (0x123, data AB B5). The capture was triggered on the
+SOF edge, so the first sample is already dominant; 30 µs of idle bus was prepended during conversion
+so the decoder can see the SOF edge.
+
 ## Limitations
 
 - CAN FD and 29-bit extended IDs are detected but not decoded
@@ -113,6 +136,6 @@ before a frame starts, which no decoder can know about.
 
 ## Possible next steps
 
-- Capture real signals from an STM32 with a USB logic analyzer and add them as test vectors
+- Add the real CAN captures in `examples/` as regression tests
 - 1-Wire / LIN decoders, CAN FD
 - Streaming decoding for very long captures

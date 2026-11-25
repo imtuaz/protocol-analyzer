@@ -274,6 +274,11 @@ void can_decode(const waveform_t *w, int ch, uint32_t bitrate, event_list_t *out
                 }
                 int pos = snprintf(e->note, EV_NOTE_LEN, "ID 0x%03X %sDLC %d",
                                    e->value, rtr ? "RTR " : "", dlc);
+                if (nb == need && !rtr && !why[0]) {   /* on error, keep the room for the reason */
+                    for (int k = 0; k < nbytes && pos < EV_NOTE_LEN; k++)
+                        pos += snprintf(e->note + pos, (size_t)(EV_NOTE_LEN - pos),
+                                        k == 0 ? " | data %02X" : " %02X", e->data[k]);
+                }
                 if (why[0] && pos < EV_NOTE_LEN)
                     snprintf(e->note + pos, (size_t)(EV_NOTE_LEN - pos), " | %s", why);
             } else if (why[0]) {
